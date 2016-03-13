@@ -8,13 +8,16 @@ uniform vec3 eye;
 #pragma glslify: attenuation = require('glsl-light-attenuation')
 #pragma glslify: direction = require('glsl-light-direction')
 #pragma glslify: orenn = require('glsl-diffuse-oren-nayar')
+#pragma glslify: blinnPhong = require(glsl-specular-blinn-phong) 
 
 struct Style {
   vec3 emissive;
   vec3 ambient;
   vec3 diffuse;
+  vec3 specular;
   float roughness;
   float albedo;
+  float shininess;
 };
 
 uniform Light lighting[LIGHTCOUNT];
@@ -31,7 +34,10 @@ void main() {
       float diffuse = orenn(normalize(dir), normalize(viewpoint), vnormal, style.roughness, style.albedo);
       diffuse = ( diffuse < 0.0 || 0.0 < diffuse || diffuse == 0.0 ) ? diffuse : 0.0;
       vec3 ambient = lighting[i].ambient * style.ambient;
-      vec3 combined = diffuse * style.diffuse;
+      
+      float power = blinnPhong(dir, eye, vnormal, style.shininess);
+
+      vec3 combined = diffuse * style.diffuse + power * style.specular;
       result += ambient + attn * combined * lighting[i].color * lighting[i].intensity;
     }
   }
